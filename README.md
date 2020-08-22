@@ -17,7 +17,7 @@
     <dependency>
         <groupId>com.iceolive</groupId>
         <artifactId>cos-web-deploy-maven-plugin</artifactId>
-        <version>0.0.1</version>
+        <version>0.0.2</version>
         <scope>provided</scope>
     </dependency>
 </dependencies>
@@ -26,7 +26,7 @@
         <plugin>
             <groupId>com.iceolive</groupId>
             <artifactId>cos-web-deploy-maven-plugin</artifactId>
-            <version>0.0.1</version>
+            <version>0.0.2</version>
             <configuration>  
                 <!--腾讯云secretId-->
                 <secretId>xxxxxxxxxxxxx</secretId>

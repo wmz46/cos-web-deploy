@@ -16,8 +16,8 @@ public class Md5Util {
 
     /**
      * 获取一个文件的md5
-     *
-     * @return md5 value
+     * @param file 文件
+     * @return md5
      */
     public static String getMD5(File file) {
         FileInputStream fileInputStream = null;

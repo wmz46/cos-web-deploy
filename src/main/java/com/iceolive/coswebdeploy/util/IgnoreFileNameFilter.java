@@ -8,6 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -17,6 +18,7 @@ import java.util.regex.Pattern;
 /**
  * @author wangmianzhe
  */
+@Slf4j
 public class IgnoreFileNameFilter implements FilenameFilter {
     private List<String> ignores = new ArrayList<>();
     private String source = "";
@@ -26,7 +28,6 @@ public class IgnoreFileNameFilter implements FilenameFilter {
         //去空格
         s = s.trim();
         //规范斜杠
-        s = "/" + s;
         s = s.replace("/", "\\\\");
         s = s.replaceAll("\\\\+", "\\\\\\\\");
 
@@ -35,6 +36,12 @@ public class IgnoreFileNameFilter implements FilenameFilter {
         s = s.replaceAll("\\*", "[^\\\\\\\\]*");
         s = s.replaceAll("\\<", ".*");
         s = s.replaceAll("\\?", "[^\\\\\\\\]?");
+        s += "$";
+        if (s.startsWith("\\\\")) {
+            s = "^" + s;
+        } else {
+            s = "\\\\" + s;
+        }
         return s;
     }
 
@@ -59,22 +66,25 @@ public class IgnoreFileNameFilter implements FilenameFilter {
             Pattern pattern = Pattern.compile(s);
             Matcher matcher;
             String path = "";
-            if(dir!=null) {
+            if (dir != null) {
                 path = dir.getPath().substring(source.length());
             }
             matcher = pattern.matcher(path);
-            if(matcher.find()){
-                return  false;
+            if (matcher.find()) {
+                log.debug(MessageFormat.format("忽略文件[{0}\\{1}]",dir.getPath(),name));
+                return false;
             }
-            path +="\\";
+            path += "\\";
             matcher = pattern.matcher(path);
-            if(matcher.find()){
-                return  false;
+            if (matcher.find()) {
+                log.debug(MessageFormat.format("忽略文件[{0}\\{1}]",dir.getPath(),name));
+                return false;
             }
-            path+=name;
+            path += name;
             matcher = pattern.matcher(path);
-            if(matcher.find()){
-                return  false;
+            if (matcher.find()) {
+                log.debug(MessageFormat.format("忽略文件[{0}\\{1}]",dir.getPath(),name));
+                return false;
             }
         }
         return true;
