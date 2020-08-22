@@ -11,7 +11,8 @@
 - 参考gitignore设计忽略列表规则，由于!取非，优先级实现麻烦，而且不够直观，也不是很常用，故不实现。
 ## 使用说明
 在pom.xml中添加以下内容，如果文件夹不是maven项目，可以手动添加pom.xml。  
-插件会打印需要删除和上传的文件名日志到控制台。无需删除和上传的文件的日志级别为debug，如需查看，请添加-X 参数执行mvn指令。
+插件会打印需要删除和上传的文件名日志到控制台。无需删除和上传的文件的日志级别为debug，如需查看，请添加-X 参数执行mvn指令。  
+注意！注意！！注意！！！若本地上传目录包含当前`pom.xml`，请一定要配置忽略当前`pom.xml`，避免腾讯云密钥泄露。
 ```xml
  <dependencies>
     <dependency>
@@ -43,6 +44,7 @@
                 <!--上传时是否先删除target目标目录下的所有文件（除远程忽略列表），格式:true/false-->
                 <deleteRemoteFirst>false</deleteRemoteFirst>                   
                 <!--本地上传忽略列表,多个使用“|”分割，规则基本同.gitignore(除了不支持!取非),实际本地忽略由localIgnore + remoteIgnore决定。支持通配符*-->
+                <!--注意！注意！！注意！！！若本地上传目录包含当前pom.xml，请一定要配置忽略当前pom.xml，避免腾讯云密钥泄露。-->
                 <localIgnore>*.iml|.idea/|pom.xml</localIgnore>
                 <!--远程忽略列表,不删除不添加不覆盖,多个使用“|”分割,规则基本同.gitignore(除了不支持!取非)-->
                 <remoteIgnore>upload/</remoteIgnore>
