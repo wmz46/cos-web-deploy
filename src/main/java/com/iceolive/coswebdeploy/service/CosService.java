@@ -1,8 +1,9 @@
 package com.iceolive.coswebdeploy.service;
 
 import com.iceolive.coswebdeploy.config.CosConfig;
-import com.iceolive.coswebdeploy.util.IgnoreFileNameFilter;
+import com.iceolive.coswebdeploy.util.LocalIgnoreFileFilter;
 import com.iceolive.coswebdeploy.util.Md5Util;
+import com.iceolive.coswebdeploy.util.RemoteIgnoreFileFilter;
 import com.qcloud.cos.COSClient;
 import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.auth.BasicCOSCredentials;
@@ -22,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.codehaus.plexus.util.StringUtils;
 
 import java.io.File;
-import java.io.FilenameFilter;
+import java.io.FileFilter;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -166,17 +167,17 @@ public class CosService {
     }
 
     public List<String> getAllFiles() {
-        FilenameFilter filenameFilter = new IgnoreFileNameFilter(cosConfig.getLocalIgnore() + "|" + cosConfig.getRemoteIgnore(), cosConfig.getSource());
-        return getAllFiles(new File(cosConfig.getSource()), filenameFilter);
+        FileFilter ignoreFileFilter = new LocalIgnoreFileFilter(cosConfig.getLocalIgnore() + "|" + cosConfig.getRemoteIgnore(), cosConfig.getSource());
+        return getAllFiles(new File(cosConfig.getSource()), ignoreFileFilter);
     }
 
-    private List<String> getAllFiles(File root, FilenameFilter filenameFilter) {
+    private List<String> getAllFiles(File root, FileFilter fileFilter) {
         List<String> result = new ArrayList<>();
 
-        File[] files = root.listFiles(filenameFilter);
+        File[] files = root.listFiles(fileFilter);
         for (File file : files) {
             if (file.isDirectory()) {
-                result.addAll(getAllFiles(file, filenameFilter));
+                result.addAll(getAllFiles(file, fileFilter));
             } else {
                 result.add(file.getPath());
             }
@@ -218,9 +219,25 @@ public class CosService {
     }
 
     /**
+     * 发布预演
+     */
+    public void preDeploy() {
+        deploy(true);
+    }
+
+    /**
      * 发布
      */
     public void deploy() {
+        deploy(false);
+    }
+
+    /**
+     * 发布
+     *
+     * @param preDeploy 是否预演
+     */
+    private void deploy(boolean preDeploy) {
 
         int deleteCount = 0;
         int uploadCount = 0;
@@ -233,21 +250,25 @@ public class CosService {
         File source = new File(cosConfig.getSource());
 
         //远程忽略列表
-        FilenameFilter filenameFilter = new IgnoreFileNameFilter(cosConfig.getRemoteIgnore());
+        FileFilter filenameFilter = new RemoteIgnoreFileFilter(cosConfig.getRemoteIgnore());
         //上传前是否删除cos文件
         if (cosConfig.getDeleteRemoteFirst().equals(true)) {
             log.info("开始删除远程文件...");
             for (COSObjectSummary item : remoteList) {
-                File file = new File(item.getKey());
+                File file = new File("\\"+item.getKey());
                 //不在忽略列表里面的
-                if (filenameFilter.accept(file.getParentFile(), file.getName())) {
-                    //检查本地是否有文件，且md5一致，一致则不删除
+                if (filenameFilter.accept(file)) {
+                    //检查本地是否有文件，有则不删除，文件md5不一致，会上传覆盖，不用删除
                     String f = localFiles.stream().filter(m -> item.getKey().equals((cosConfig.getTarget() + m.replace(source.getPath() + "\\", "")).replace("\\", "/"))).findFirst().orElse(null);
-                    if (!StringUtils.isBlank(f) && Md5Util.getMD5(new File(f)).equals(item.getETag())) {
+                    if (!StringUtils.isBlank(f) ) {
                         log.debug(MessageFormat.format("远程文件[{0}]无需删除", item.getKey()));
                         continue;
                     }
-                    deleteObject(item.getKey());
+                    if (!preDeploy) {
+                        deleteObject(item.getKey());
+                    } else {
+                        log.info(MessageFormat.format("删除远程文件[{0}]", item.getKey()));
+                    }
                     deleteCount++;
                 }
             }
@@ -261,10 +282,14 @@ public class CosService {
                 log.debug(MessageFormat.format("文件[{0}]和远程[{1}]一致，无需上传", file, key));
                 continue;
             }
-            putObject(key, file);
+            if (!preDeploy) {
+                putObject(key, file);
+            } else {
+                log.info(MessageFormat.format("上传文件[{0}]到远程[{1}]", file, key));
+            }
             uploadCount++;
         }
-        log.info(MessageFormat.format("本次合计删除{0}个文件，上传{1}个文件",deleteCount,uploadCount));
+        log.info(MessageFormat.format("本次合计删除{0}个文件，上传{1}个文件", deleteCount, uploadCount));
         //刷新目录
         refreshCdn();
     }

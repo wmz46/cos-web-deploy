@@ -20,8 +20,8 @@ import java.text.MessageFormat;
  */
 @Data
 @Slf4j
-@Mojo(name = "deploy", threadSafe = true, defaultPhase = LifecyclePhase.PACKAGE)
-public class DeployMojo extends AbstractMojo {
+@Mojo(name = "pre-deploy", threadSafe = true, defaultPhase = LifecyclePhase.COMPILE)
+public class PreDeployMojo extends AbstractMojo {
 
     /**
      * secretId
@@ -78,29 +78,16 @@ public class DeployMojo extends AbstractMojo {
     public void execute() throws MojoExecutionException, MojoFailureException {
         try {
             long start = System.currentTimeMillis();
-            log.info("开始发布...");
+            log.info("开始预演发布...");
             CosService cosService = DeployMojo.initCosService(secretId, secretKey, region, bucketName, source, target, localIgnore, deleteRemoteFirst, remoteIgnore, refreshPath);
-            cosService.deploy();
-            getLog().info(MessageFormat.format("发布完成,耗时{0}s。", (System.currentTimeMillis() - start) / 1000));
+
+            cosService.preDeploy();
+            getLog().info(MessageFormat.format("预演发布完成,耗时{0}s。", (System.currentTimeMillis() - start) / 1000));
 
         } catch (Exception e) {
-            log.error("发布失败！", e);
+            log.error("预演发布失败！", e);
         }
     }
 
-    static CosService initCosService(String secretId, String secretKey, String region, String bucketName, String source, String target, String localIgnore, Boolean deleteRemoteFirst, String remoteIgnore, String refreshPath) {
-        CosConfig cosConfig = new CosConfig();
-        cosConfig.setSecretId(secretId);
-        cosConfig.setSecretKey(secretKey);
-        cosConfig.setRegion(region);
-        cosConfig.setBucketName(bucketName);
-        cosConfig.setSource(source);
-        cosConfig.setTarget(target);
-        cosConfig.setLocalIgnore(localIgnore);
-        cosConfig.setDeleteRemoteFirst(deleteRemoteFirst);
-        cosConfig.setRemoteIgnore(remoteIgnore);
-        cosConfig.setRefreshPath(refreshPath);
-        CosService cosService = new CosService(cosConfig);
-        return cosService;
-    }
+
 }

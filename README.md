@@ -12,13 +12,14 @@
 ## 使用说明
 在pom.xml中添加以下内容，如果文件夹不是maven项目，可以手动添加pom.xml。  
 插件会打印需要删除和上传的文件名日志到控制台。无需删除和上传的文件的日志级别为debug，如需查看，请添加-X 参数执行mvn指令。  
-注意！注意！！注意！！！若本地上传目录包含当前`pom.xml`，请一定要配置忽略当前`pom.xml`，避免腾讯云密钥泄露。
+注意！注意！！注意！！！若本地上传目录包含当前`pom.xml`，请一定要配置忽略当前`pom.xml`，避免腾讯云密钥泄露。  
+建议先执行pre-deploy预演发布指令，该指令不会实际删除和上传文件。可以用来查看有哪些文件会删除和上传，避免由于配置导致文件误删问题。
 ```xml
  <dependencies>
     <dependency>
         <groupId>com.iceolive</groupId>
         <artifactId>cos-web-deploy-maven-plugin</artifactId>
-        <version>0.0.2</version>
+        <version>0.1.0</version>
         <scope>provided</scope>
     </dependency>
 </dependencies>
@@ -27,7 +28,7 @@
         <plugin>
             <groupId>com.iceolive</groupId>
             <artifactId>cos-web-deploy-maven-plugin</artifactId>
-            <version>0.0.2</version>
+            <version>0.1.0</version>
             <configuration>  
                 <!--腾讯云secretId-->
                 <secretId>xxxxxxxxxxxxx</secretId>
@@ -45,17 +46,25 @@
                 <deleteRemoteFirst>false</deleteRemoteFirst>                   
                 <!--本地上传忽略列表,多个使用“|”分割，规则基本同.gitignore(除了不支持!取非),实际本地忽略由localIgnore + remoteIgnore决定。支持通配符*-->
                 <!--注意！注意！！注意！！！若本地上传目录包含当前pom.xml，请一定要配置忽略当前pom.xml，避免腾讯云密钥泄露。-->
-                <localIgnore>*.iml|.idea/|pom.xml</localIgnore>
+                <localIgnore>*.iml|.idea/|/pom.xml</localIgnore>
                 <!--远程忽略列表,不删除不添加不覆盖,多个使用“|”分割,规则基本同.gitignore(除了不支持!取非)-->
-                <remoteIgnore>upload/</remoteIgnore>
+                <remoteIgnore>/upload</remoteIgnore>
                 <!--你要刷新的网站目录，空则不刷新，腾讯云每日最多目录刷新次数100次-->
                 <refreshPath>https://www.yoursite.com/</refreshPath>        
             </configuration>
             <executions>
-                <execution>
-                    <phase>compile</phase>
+                 <execution>
+                    <id>deploy</id>
+                    <phase>package</phase>
                     <goals>
                         <goal>deploy</goal>
+                    </goals>
+                </execution>
+                <execution>
+                    <id>pre-deploy</id>
+                    <phase>compile</phase>
+                    <goals>
+                        <goal>pre-deploy</goal>
                     </goals>
                 </execution>
             </executions>
