@@ -29,6 +29,7 @@
             <groupId>com.iceolive</groupId>
             <artifactId>cos-web-deploy-maven-plugin</artifactId>
             <version>0.1.0</version>
+            <inherited>false</inherited>
             <configuration>  
                 <!--腾讯云secretId-->
                 <secretId>xxxxxxxxxxxxx</secretId>
